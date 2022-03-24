@@ -1,5 +1,5 @@
 import numpy as np
-from deepfool import deepfool
+from python.deepfool import deepfool
 
 def proj_lp(v, xi, p):
 

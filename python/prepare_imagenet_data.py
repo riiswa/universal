@@ -1,16 +1,20 @@
 import numpy as np
 import os
-from scipy.misc import imread, imresize
+from imageio import imread
+from PIL import Image
 
 CLASS_INDEX = None
 CLASS_INDEX_PATH = 'https://s3.amazonaws.com/deep-learning-models/image-models/imagenet_class_index.json'
+
+def imresize(arr, newsize):
+    return np.array(Image.fromarray(arr).resize(newsize))
 
 
 def preprocess_image_batch(image_paths, img_size=None, crop_size=None, color_mode="rgb", out=None):
     img_list = []
 
     for im_path in image_paths:
-        img = imread(im_path, mode='RGB')
+        img = imread(im_path, pilmode='RGB')
         if img_size:
             img = imresize(img,img_size)
 
