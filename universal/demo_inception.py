@@ -42,7 +42,7 @@ if __name__ == '__main__':
     try:
         opts, args = getopt.getopt(argv,"i:t:",["test_image=","training_path="])
     except getopt.GetoptError:
-        print ('python ' + sys.argv[0] + ' -i <test image> -t <imagenet training path>')
+        print ('universal ' + sys.argv[0] + ' -i <test image> -t <imagenet training path>')
         sys.exit(2)
 
     for opt, arg in opts:

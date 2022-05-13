@@ -1,5 +1,6 @@
 import numpy as np
-from python.deepfool import deepfool
+from universal.deepfool import deepfool
+from tqdm import tqdm
 
 def proj_lp(v, xi, p):
 
@@ -16,13 +17,12 @@ def proj_lp(v, xi, p):
 
     return v
 
-def universal_perturbation(dataset, f, grads, delta=0.2, max_iter_uni = np.inf, xi=10, p=np.inf, num_classes=10, overshoot=0.02, max_iter_df=10):
+
+def universal_perturbation(dataset, f, delta=0.2, max_iter_uni = np.inf, xi=10, p=np.inf, num_classes=10, overshoot=0.02, max_iter_df=10):
     """
     :param dataset: Images of size MxHxWxC (M: number of images)
 
     :param f: feedforward function (input: images, output: values of activation BEFORE softmax).
-
-    :param grads: gradient functions with respect to input (as many gradients as classes).
 
     :param delta: controls the desired fooling rate (default = 80% fooling rate)
 
@@ -41,9 +41,9 @@ def universal_perturbation(dataset, f, grads, delta=0.2, max_iter_uni = np.inf, 
     :return: the universal perturbation.
     """
 
-    v = 0
+    v = np.zeros(dataset[0].unsqueeze(0).shape, dtype=np.float32)
     fooling_rate = 0.0
-    num_images =  np.shape(dataset)[0] # The images should be stacked ALONG FIRST DIMENSION
+    num_images = np.shape(dataset)[0] # The images should be stacked ALONG FIRST DIMENSION
 
     itr = 0
     while fooling_rate < 1-delta and itr < max_iter_uni:
@@ -53,15 +53,14 @@ def universal_perturbation(dataset, f, grads, delta=0.2, max_iter_uni = np.inf, 
         print ('Starting pass number ', itr)
 
         # Go through the data set and compute the perturbation increments sequentially
-        for k in range(0, num_images):
+        for k in tqdm(range(0, num_images)):
             cur_img = dataset[k:(k+1), :, :, :]
-
-            if int(np.argmax(np.array(f(cur_img)).flatten())) == int(np.argmax(np.array(f(cur_img+v)).flatten())):
+            if int(np.argmax(np.array(f(cur_img, use_memory=True).detach()).flatten())) == int(np.argmax(np.array(f(cur_img+v[0]).detach()).flatten())):
                 print('>> k = ', k, ', pass #', itr)
 
                 # Compute adversarial perturbation
-                dr,iter,_,_ = deepfool(cur_img + v, f, grads, num_classes=num_classes, overshoot=overshoot, max_iter=max_iter_df)
-
+                dr,iter,_,_,_ = deepfool(cur_img + v[0], f, num_classes=num_classes, overshoot=overshoot, max_iter=max_iter_df)
+                dr = dr
                 # Make sure it converged...
                 if iter < max_iter_df-1:
                     v = v + dr
@@ -72,23 +71,23 @@ def universal_perturbation(dataset, f, grads, delta=0.2, max_iter_uni = np.inf, 
         itr = itr + 1
 
         # Perturb the dataset with computed perturbation
-        dataset_perturbed = dataset + v
+        dataset_perturbed = dataset + v[0]
 
         est_labels_orig = np.zeros((num_images))
         est_labels_pert = np.zeros((num_images))
 
-        batch_size = 100
+        batch_size = 25
         num_batches = np.int(np.ceil(np.float(num_images) / np.float(batch_size)))
 
         # Compute the estimated labels in batches
         for ii in range(0, num_batches):
             m = (ii * batch_size)
             M = min((ii+1)*batch_size, num_images)
-            est_labels_orig[m:M] = np.argmax(f(dataset[m:M, :, :, :]), axis=1).flatten()
-            est_labels_pert[m:M] = np.argmax(f(dataset_perturbed[m:M, :, :, :]), axis=1).flatten()
+            est_labels_orig[m:M] = np.argmax(f(dataset[m:M, :, :, :]).detach().numpy(), axis=1).flatten()
+            est_labels_pert[m:M] = np.argmax(f(dataset_perturbed[m:M, :, :, :]).detach().numpy(), axis=1).flatten()
 
         # Compute the fooling rate
         fooling_rate = float(np.sum(est_labels_pert != est_labels_orig) / float(num_images))
         print('FOOLING RATE = ', fooling_rate)
-
+    print('FOOLING RATE = ', fooling_rate)
     return v

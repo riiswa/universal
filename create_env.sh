@@ -1,2 +1,2 @@
-virtualenv universal
-source universal/bin/activate
+virtualenv venv
+source venv/bin/activate

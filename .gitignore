@@ -3,4 +3,7 @@ __pycache__/
 *.zip
 *.pyc
 *.pb
-universal/
+.data
+.idea
+venv
+*.pt
