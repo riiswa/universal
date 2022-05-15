@@ -70,7 +70,7 @@ if __name__ == '__main__':
     if args.state_dict:
         logging.info(f"State dict {args.state_dict} found. Load pretrained weights.")
         model.load_state_dict(torch.load(args.state_dict))
-        # model.eval()
+        model.eval()
     else:
         logging.info(f"State dict not found.")
         pretrained_model = models.vgg11_bn(pretrained=True)
@@ -131,6 +131,7 @@ if __name__ == '__main__':
 
     if args.visualize:
         a = v.squeeze().transpose(1, 2, 0)
+
         logging.info(f"Perturbation vector norm = {np.linalg.norm(abs(a))}")
         perturbation = (a - np.min(a))/np.ptp(a)
         plt.matshow(perturbation)
@@ -145,9 +146,52 @@ if __name__ == '__main__':
 
         plot_images(images, predicted, classes, true_labels=labels)
 
-        images, labels = zip(*[(image + v.squeeze()*5, label) for image, label in
+        images, labels = zip(*[(image + v.squeeze()*3, label) for image, label in
                                [valid_data[i] for i in sample]])
         outputs = model(torch.stack(images).to(device))
         _, predicted_perturbed = outputs[0].max(1)
 
         plot_images(images, predicted_perturbed, classes, true_labels=predicted)
+
+        norms = np.linspace(0., 100., 25)
+
+        random_v = np.random.rand(1, 3, 224, 224) - 0.5
+        random_v = random_v.astype(np.float32)
+        v_norm = np.linalg.norm(np.abs(v[0]))
+        random_v_norm = np.linalg.norm(np.abs(random_v))
+
+        dataset = torch.stack([valid_data[i][0] for i in range(100)])
+        num_images = 100
+
+        first_time = True
+        est_labels_orig = np.zeros((num_images))
+
+        num_batches = np.int(np.ceil(np.float(num_images) / np.float(args.batch_size)))
+
+        for norm in tqdm(norms):
+
+            normalized_v = v * (norm / v_norm)
+            normalized_random_v = random_v * (norm / random_v_norm)
+            #print(norm, np.linalg.norm(np.abs(normalized_v)), np.linalg.norm(np.abs(normalized_random_v)))
+
+            # Perturb the dataset with computed perturbation
+            dataset_perturbed = dataset + normalized_v[0]
+            dataset_perturbed2 = dataset + normalized_random_v
+
+            est_labels_pert = np.zeros((num_images))
+            est_labels_pert2 = np.zeros((num_images))
+
+            # Compute the estimated labels in batches
+            for ii in range(0, num_batches):
+                m = (ii * args.batch_size)
+                M = min((ii + 1) * args.batch_size, num_images)
+                if first_time:
+                    est_labels_orig[m:M] = np.argmax(classifier(dataset[m:M, :, :, :]).detach().numpy(), axis=1).flatten()
+                    first_time = False
+                est_labels_pert[m:M] = np.argmax(classifier(dataset_perturbed[m:M, :, :, :]).detach().numpy(), axis=1).flatten()
+                est_labels_pert2[m:M] = np.argmax(classifier(dataset_perturbed2[m:M, :, :, :]).detach().numpy(),
+                                                 axis=1).flatten()
+            fooling_rate = float(np.sum(est_labels_pert != est_labels_orig) / float(num_images))
+            fooling_rate2 = float(np.sum(est_labels_pert2 != est_labels_orig) / float(num_images))
+            print(fooling_rate, fooling_rate2)
+
