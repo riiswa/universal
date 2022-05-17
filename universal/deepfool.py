@@ -50,7 +50,7 @@ def deepfool(image, net, num_classes=10, overshoot=0.02, max_iter=10, device='cp
 
         # compute r_i and r_tot
         # Added 1e-4 for numerical stability
-        r_i = (pert + 1e-4) * w / torch.linalg.norm(w)
+        r_i = ((pert + 1e-4) * w / torch.linalg.norm(w)).to(device)
         r_tot = np.float32(r_tot + r_i)
 
         pert_image = image + (1 + overshoot) * torch.from_numpy(r_tot)
