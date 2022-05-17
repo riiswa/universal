@@ -94,12 +94,11 @@ def universal_perturbation(dataset, f, delta=0.2, max_iter_uni=np.inf, xi=10, p=
         for ii in range(0, num_batches):
             m = (ii * batch_size)
             M = min((ii+1)*batch_size, num_images)
-            print(f(dataset[m:M, :, :, :]).detach().cpu().apply_(lambda x: x.argmax()))
-            est_labels_orig[m:M] = np.argmax(f(dataset[m:M, :, :, :]), axis=1).flatten()
-            est_labels_pert[m:M] = np.argmax(f(dataset_perturbed[m:M, :, :, :]).detach().numpy(), axis=1).flatten()
+            est_labels_orig[m:M] = torch.argmax(f(dataset[m:M, :, :, :]), dim=1).flatten()
+            est_labels_pert[m:M] = torch.argmax(f(dataset_perturbed[m:M, :, :, :]), dim=1).flatten()
 
         # Compute the fooling rate
-        fooling_rate = float(np.sum(est_labels_pert != est_labels_orig) / float(num_images))
+        fooling_rate = float(torch.sum(est_labels_pert != est_labels_orig) / float(num_images))
         logging.info(f'FOOLING RATE = {fooling_rate}')
         if fooling_rate > best_fooling_rate:
             logging.info(f'Perturbation saved.')
