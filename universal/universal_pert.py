@@ -96,6 +96,7 @@ def universal_perturbation(dataset, f, delta=0.2, max_iter_uni=np.inf, xi=10, p=
             print(f(dataset[m:M, :, :, :]))
             m = (ii * batch_size)
             M = min((ii+1)*batch_size, num_images)
+            print(f(dataset[m:M, :, :, :]))
             est_labels_orig[m:M] = np.argmax(f(dataset[m:M, :, :, :]), axis=1).flatten()
             est_labels_pert[m:M] = np.argmax(f(dataset_perturbed[m:M, :, :, :]).detach().numpy(), axis=1).flatten()
 
