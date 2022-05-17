@@ -20,7 +20,7 @@ def proj_lp(v, xi, p):
     return v
 
 
-def universal_perturbation(dataset, f, delta=0.2, max_iter_uni=np.inf, xi=10, p=np.inf, num_classes=10, overshoot=0.02, max_iter_df=10, batch_size=25):
+def universal_perturbation(dataset, f, delta=0.2, max_iter_uni=np.inf, xi=10, p=np.inf, num_classes=10, overshoot=0.02, max_iter_df=10, batch_size=25, input_vector=None):
     """
     :param dataset: Images of size MxHxWxC (M: number of images)
 
@@ -43,7 +43,11 @@ def universal_perturbation(dataset, f, delta=0.2, max_iter_uni=np.inf, xi=10, p=
     :return: the universal perturbation.
     """
 
-    v = np.zeros(dataset[0].unsqueeze(0).shape, dtype=np.float32)
+    if input_vector is None:
+        v = np.zeros(dataset[0].unsqueeze(0).shape, dtype=np.float32)
+    else:
+        v = input_vector
+
     fooling_rate = 0.0
 
     best_v = None

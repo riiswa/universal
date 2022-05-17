@@ -41,6 +41,7 @@ if __name__ == '__main__':
     parser.add_argument('-b', '--batch-size', type=int, help='', default=25)
     parser.add_argument('--image-per-class', type=int, help='', default=25)
     parser.add_argument('--max-iter', type=int, help='', default=np.inf)
+    parser.add_argument('-i', '--input', type=str, help='', default=None)
     args = parser.parse_args()
     logging.debug(args)
 
@@ -53,13 +54,13 @@ if __name__ == '__main__':
     logging.info(f"Prepare data. Train/validation data: {args.train_data}, Test data: {args.test_data}")
     os.makedirs('.data/', exist_ok=True)
     download_training_data(args.train_data, args.force_download)
-    #download_testing_data(args.test_data, args.force_download)
+    # download_testing_data(args.test_data, args.force_download)
     train_data_df, valid_data_df = get_trainval_dataset(args.train_data)
-    #test_data_df = get_test_dataset(args.test_data)
+    # test_data_df = get_test_dataset(args.test_data)
 
     train_data = VOCDataset(train_data_df, args.train_data, train_transforms)
     valid_data = VOCDataset(valid_data_df, args.train_data, test_transforms)
-    #test_data = VOCDataset(test_data_df, args.test_data, test_transforms)
+    # test_data = VOCDataset(test_data_df, args.test_data, test_transforms)
 
     if args.visualize:
         images, labels = zip(*[(image, label) for image, label in
@@ -123,7 +124,8 @@ if __name__ == '__main__':
             num_classes=len(classes),
             xi=2000,
             p=2,
-            max_iter_uni=args.max_iter
+            max_iter_uni=args.max_iter,
+            input_vector=np.load(args.input) if args.input else None
         )
 
     if args.output:
@@ -133,6 +135,7 @@ if __name__ == '__main__':
         a = v.squeeze().transpose(1, 2, 0)
 
         logging.info(f"Perturbation vector norm = {np.linalg.norm(abs(a))}")
+        a = np.abs(a)
         perturbation = (a - np.min(a))/np.ptp(a)
         plt.matshow(perturbation)
         plt.show()
@@ -146,7 +149,7 @@ if __name__ == '__main__':
 
         plot_images(images, predicted, classes, true_labels=labels)
 
-        images, labels = zip(*[(image + v.squeeze()*3, label) for image, label in
+        images, labels = zip(*[(image + v.squeeze()*4, label) for image, label in
                                [valid_data[i] for i in sample]])
         outputs = model(torch.stack(images).to(device))
         _, predicted_perturbed = outputs[0].max(1)
@@ -160,11 +163,14 @@ if __name__ == '__main__':
         v_norm = np.linalg.norm(np.abs(v[0]))
         random_v_norm = np.linalg.norm(np.abs(random_v))
 
-        dataset = torch.stack([valid_data[i][0] for i in range(100)])
-        num_images = 100
+        dataset = torch.stack([valid_data[i][0] for i in range(50)])
+        num_images = 50
 
         first_time = True
         est_labels_orig = np.zeros((num_images))
+
+        f1 = []
+        f2 = []
 
         num_batches = np.int(np.ceil(np.float(num_images) / np.float(args.batch_size)))
 
@@ -172,7 +178,7 @@ if __name__ == '__main__':
 
             normalized_v = v * (norm / v_norm)
             normalized_random_v = random_v * (norm / random_v_norm)
-            #print(norm, np.linalg.norm(np.abs(normalized_v)), np.linalg.norm(np.abs(normalized_random_v)))
+            # print(norm, np.linalg.norm(np.abs(normalized_v)), np.linalg.norm(np.abs(normalized_random_v)))
 
             # Perturb the dataset with computed perturbation
             dataset_perturbed = dataset + normalized_v[0]
@@ -193,5 +199,12 @@ if __name__ == '__main__':
                                                  axis=1).flatten()
             fooling_rate = float(np.sum(est_labels_pert != est_labels_orig) / float(num_images))
             fooling_rate2 = float(np.sum(est_labels_pert2 != est_labels_orig) / float(num_images))
+            f1.append(fooling_rate)
+            f2.append(fooling_rate2)
             print(fooling_rate, fooling_rate2)
+
+        plt.plot(norms**2, f1, label="Universal Perturbation")
+        plt.plot(norms**2, f2, label="Random Perturbation")
+        plt.legend()
+        plt.show()
 
