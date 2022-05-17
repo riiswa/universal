@@ -67,7 +67,6 @@ def universal_perturbation(dataset, f, delta=0.2, max_iter_uni=np.inf, xi=10, p=
         # Go through the data set and compute the perturbation increments sequentially
         for k in (pbar := tqdm(range(0, num_images))):
             cur_img = dataset[k:(k+1), :, :, :]
-            print(f(cur_img).argmax())
             if f(cur_img).argmax() == f(cur_img+torch.tensor(v[0]).to(device)).argmax():
                 pbar.set_description(f'>> k = {k}, pass #{itr}')
 
@@ -95,7 +94,7 @@ def universal_perturbation(dataset, f, delta=0.2, max_iter_uni=np.inf, xi=10, p=
         for ii in range(0, num_batches):
             m = (ii * batch_size)
             M = min((ii+1)*batch_size, num_images)
-            print(f(dataset[m:M, :, :, :]).detach().cpu().apply_(lambda x: x.argmax()).flatten())
+            print(f(dataset[m:M, :, :, :]).detach().cpu().apply_(lambda x: x.argmax()))
             est_labels_orig[m:M] = np.argmax(f(dataset[m:M, :, :, :]), axis=1).flatten()
             est_labels_pert[m:M] = np.argmax(f(dataset_perturbed[m:M, :, :, :]).detach().numpy(), axis=1).flatten()
 
