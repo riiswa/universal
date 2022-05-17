@@ -71,7 +71,7 @@ def universal_perturbation(dataset, f, delta=0.2, max_iter_uni=np.inf, xi=10, p=
                 pbar.set_description(f'>> k = {k}, pass #{itr}')
 
                 # Compute adversarial perturbation
-                dr,iter,_,_,_ = deepfool(cur_img + torch.from_numpy(v[0]).to(device), f, num_classes=num_classes, overshoot=overshoot, max_iter=max_iter_df)
+                dr,iter,_,_,_ = deepfool(cur_img + torch.from_numpy(v[0]).to(device), f, num_classes=num_classes, overshoot=overshoot, max_iter=max_iter_df, device=device)
                 dr = dr
                 # Make sure it converged...
                 if iter < max_iter_df-1:
