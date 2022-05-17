@@ -67,11 +67,11 @@ def universal_perturbation(dataset, f, delta=0.2, max_iter_uni=np.inf, xi=10, p=
         # Go through the data set and compute the perturbation increments sequentially
         for k in (pbar := tqdm(range(0, num_images))):
             cur_img = dataset[k:(k+1), :, :, :]
-            if f(cur_img).argmax() == f(cur_img+torch.tensor(v[0]).to(device)).argmax():
+            if f(cur_img).argmax() == f(cur_img+torch.from_numpy(v[0]).to(device)).argmax():
                 pbar.set_description(f'>> k = {k}, pass #{itr}')
 
                 # Compute adversarial perturbation
-                dr,iter,_,_,_ = deepfool(cur_img + torch.tensor(v[0]).to(device), f, num_classes=num_classes, overshoot=overshoot, max_iter=max_iter_df)
+                dr,iter,_,_,_ = deepfool(cur_img + torch.from_numpy(v[0]).to(device), f, num_classes=num_classes, overshoot=overshoot, max_iter=max_iter_df)
                 dr = dr
                 # Make sure it converged...
                 if iter < max_iter_df-1:
@@ -84,7 +84,7 @@ def universal_perturbation(dataset, f, delta=0.2, max_iter_uni=np.inf, xi=10, p=
         itr = itr + 1
 
         # Perturb the dataset with computed perturbation
-        dataset_perturbed = dataset + torch.tensor(v[0]).to(device)
+        dataset_perturbed = dataset + torch.from_numpy(v[0]).to(device)
 
         est_labels_orig = torch.zeros((num_images)).to(device)
         est_labels_pert = torch.zeros((num_images)).to(device)
