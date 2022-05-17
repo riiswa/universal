@@ -12,7 +12,7 @@ def deepfool(image, net, num_classes=10, overshoot=0.02, max_iter=10, device='cp
     label = I[0]
 
     input_shape = image.shape
-    pert_image = copy.deepcopy(image)
+    pert_image = image.clone()
     w = torch.zeros(input_shape).to(device)
     r_tot = torch.zeros(input_shape).to(device)
 
@@ -51,9 +51,9 @@ def deepfool(image, net, num_classes=10, overshoot=0.02, max_iter=10, device='cp
         # compute r_i and r_tot
         # Added 1e-4 for numerical stability
         r_i = (pert + 1e-4) * w / torch.linalg.norm(w)
-        r_tot = r_tot + r_i
+        r_tot = np.float32(r_tot + r_i)
 
-        pert_image = image + (1 + overshoot) * r_tot
+        pert_image = image + (1 + overshoot) * torch.from_numpy(r_tot)
 
         x = pert_image.clone().detach().requires_grad_(True)
         fs = net(x[0])
