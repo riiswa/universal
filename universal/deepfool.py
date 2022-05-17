@@ -55,8 +55,8 @@ def deepfool(image, net, num_classes=10, overshoot=0.02, max_iter=10, device='cp
 
         pert_image = image.to(device) + (1 + overshoot) * (torch.from_numpy(r_tot).to(device))
 
-        x = pert_image.clone().detach().requires_grad_(True).to(device)
-        fs = net(x[0])
+        x = pert_image.clone().detach().requires_grad_(True)
+        fs = net(x[0].to(device))
         k_i = fs.flatten().argmax()
 
         loop_i += 1
