@@ -118,14 +118,16 @@ if __name__ == '__main__':
         logging.info(f'Selected imgs = {ids}')
         logging.info(f'Classes distribution = {counts}')
         logging.info("Starting computation of universal perturbation...")
+        model.to(device)
         v = universal_perturbation(
-            torch.stack(imgs),
+            torch.stack(imgs).to(device),
             classifier,
             num_classes=len(classes),
             xi=2000,
             p=2,
             max_iter_uni=args.max_iter,
-            input_vector=np.load(args.input) if args.input else None
+            input_vector=np.load(args.input) if args.input else None,
+            device=device
         )
 
     if args.output:

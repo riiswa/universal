@@ -1,6 +1,8 @@
 import logging
 
 import numpy as np
+import torch
+
 from universal.deepfool import deepfool
 from tqdm import tqdm
 
@@ -20,7 +22,7 @@ def proj_lp(v, xi, p):
     return v
 
 
-def universal_perturbation(dataset, f, delta=0.2, max_iter_uni=np.inf, xi=10, p=np.inf, num_classes=10, overshoot=0.02, max_iter_df=10, batch_size=25, input_vector=None):
+def universal_perturbation(dataset, f, delta=0.2, max_iter_uni=np.inf, xi=10, p=np.inf, num_classes=10, overshoot=0.02, max_iter_df=10, batch_size=25, input_vector=None, device='cpu'):
     """
     :param dataset: Images of size MxHxWxC (M: number of images)
 
@@ -58,18 +60,19 @@ def universal_perturbation(dataset, f, delta=0.2, max_iter_uni=np.inf, xi=10, p=
     itr = 0
     while fooling_rate < 1-delta and itr < max_iter_uni:
         # Shuffle the dataset
-        np.random.shuffle(dataset)
+        # np.random.shuffle(dataset)
 
         print ('Starting pass number ', itr)
 
         # Go through the data set and compute the perturbation increments sequentially
         for k in (pbar := tqdm(range(0, num_images))):
             cur_img = dataset[k:(k+1), :, :, :]
-            if int(np.argmax(np.array(f(cur_img).detach()).flatten())) == int(np.argmax(np.array(f(cur_img+v[0]).detach()).flatten())):
+            print(f(cur_img).argmax())
+            if f(cur_img).argmax() == f(cur_img+torch.tensor(v[0]).to(device)).argmax():
                 pbar.set_description(f'>> k = {k}, pass #{itr}')
 
                 # Compute adversarial perturbation
-                dr,iter,_,_,_ = deepfool(cur_img + v[0], f, num_classes=num_classes, overshoot=overshoot, max_iter=max_iter_df)
+                dr,iter,_,_,_ = deepfool(cur_img + torch.tensor(v[0]).to(device), f, num_classes=num_classes, overshoot=overshoot, max_iter=max_iter_df)
                 dr = dr
                 # Make sure it converged...
                 if iter < max_iter_df-1:
