@@ -84,18 +84,19 @@ def universal_perturbation(dataset, f, delta=0.2, max_iter_uni=np.inf, xi=10, p=
         itr = itr + 1
 
         # Perturb the dataset with computed perturbation
-        dataset_perturbed = dataset + v[0]
+        dataset_perturbed = dataset + torch.tensor(v[0]).to(device)
 
-        est_labels_orig = np.zeros((num_images))
-        est_labels_pert = np.zeros((num_images))
+        est_labels_orig = torch.zeros((num_images)).to(device)
+        est_labels_pert = torch.zeros((num_images)).to(device)
 
         num_batches = np.int(np.ceil(np.float(num_images) / np.float(batch_size)))
 
         # Compute the estimated labels in batches
         for ii in range(0, num_batches):
+            print(f(dataset[m:M, :, :, :]))
             m = (ii * batch_size)
             M = min((ii+1)*batch_size, num_images)
-            est_labels_orig[m:M] = np.argmax(f(dataset[m:M, :, :, :]).detach().numpy(), axis=1).flatten()
+            est_labels_orig[m:M] = np.argmax(f(dataset[m:M, :, :, :]), axis=1).flatten()
             est_labels_pert[m:M] = np.argmax(f(dataset_perturbed[m:M, :, :, :]).detach().numpy(), axis=1).flatten()
 
         # Compute the fooling rate
