@@ -4,7 +4,7 @@ import numpy as np
 import torch
 
 
-def deepfool(image, net, num_classes=10, overshoot=0.02, max_iter=10):
+def deepfool(image, net, num_classes=10, overshoot=0.02, max_iter=10, device='cpu'):
     f_image = net(image).flatten()
     I = f_image.argsort(descending=True)
 
@@ -13,8 +13,8 @@ def deepfool(image, net, num_classes=10, overshoot=0.02, max_iter=10):
 
     input_shape = image.shape
     pert_image = copy.deepcopy(image)
-    w = torch.zeros(input_shape)
-    r_tot = torch.zeros(input_shape)
+    w = torch.zeros(input_shape).to(device)
+    r_tot = torch.zeros(input_shape).to(device)
 
     loop_i = 0
 
