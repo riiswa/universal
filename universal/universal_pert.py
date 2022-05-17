@@ -93,7 +93,6 @@ def universal_perturbation(dataset, f, delta=0.2, max_iter_uni=np.inf, xi=10, p=
 
         # Compute the estimated labels in batches
         for ii in range(0, num_batches):
-            print(f(dataset[m:M, :, :, :]))
             m = (ii * batch_size)
             M = min((ii+1)*batch_size, num_images)
             print(f(dataset[m:M, :, :, :]))
