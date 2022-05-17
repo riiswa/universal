@@ -79,6 +79,7 @@ def universal_perturbation(dataset, f, delta=0.2, max_iter_uni=np.inf, xi=10, p=
 
                     # Project on l_p ball
                     v = proj_lp(v, xi, p)
+            print(np.linalg.norm(v))
 
         itr = itr + 1
 
