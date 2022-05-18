@@ -40,12 +40,14 @@ def deepfool(image, net, num_classes=10, overshoot=0.02, max_iter=10, device='cp
             # set new w_k and new f_k
             w_k = cur_grad - grad_orig
             f_k = (fs[0, I[k]] - fs[0, I[0]]).data
+            print("w_k", torch.linalg.norm(w_k))
+            print("f_k", torch.linalg.norm(f_k))
 
             pert_k = f_k.abs() / torch.linalg.norm(w_k.flatten())
+            print("pert_k", loop_i, torch.linalg.norm(pert_k))
 
             # determine which w_k to use
             if pert_k < pert:
-                print("pert_k", loop_i, torch.linalg.norm(pert_k))
                 pert = pert_k
                 w = w_k
 
