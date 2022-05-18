@@ -57,6 +57,10 @@ def universal_perturbation(dataset, f, delta=0.2, max_iter_uni=np.inf, xi=10, p=
 
     num_images = np.shape(dataset)[0] # The images should be stacked ALONG FIRST DIMENSION
 
+    first_run = True
+
+    est_labels_orig = torch.zeros((num_images)).to(device)
+
     itr = 0
     while fooling_rate < 1-delta and itr < max_iter_uni:
         # Shuffle the dataset
@@ -84,9 +88,10 @@ def universal_perturbation(dataset, f, delta=0.2, max_iter_uni=np.inf, xi=10, p=
         itr = itr + 1
 
         # Perturb the dataset with computed perturbation
+        if device == 'cuda':
+            torch.cuda.empty_cache()
         dataset_perturbed = dataset + torch.from_numpy(v[0]).to(device)
 
-        est_labels_orig = torch.zeros((num_images)).to(device)
         est_labels_pert = torch.zeros((num_images)).to(device)
 
         num_batches = np.int(np.ceil(np.float(num_images) / np.float(batch_size)))
@@ -95,9 +100,10 @@ def universal_perturbation(dataset, f, delta=0.2, max_iter_uni=np.inf, xi=10, p=
         for ii in range(0, num_batches):
             m = (ii * batch_size)
             M = min((ii+1)*batch_size, num_images)
-            est_labels_orig[m:M] = torch.argmax(f(dataset[m:M, :, :, :]), dim=1).flatten()
+            if first_run:
+                est_labels_orig[m:M] = torch.argmax(f(dataset[m:M, :, :, :]), dim=1).flatten()
             est_labels_pert[m:M] = torch.argmax(f(dataset_perturbed[m:M, :, :, :]), dim=1).flatten()
-
+        first_run = False
         # Compute the fooling rate
         fooling_rate = float(torch.sum(est_labels_pert != est_labels_orig) / float(num_images))
         logging.info(f'FOOLING RATE = {fooling_rate}')
@@ -106,4 +112,6 @@ def universal_perturbation(dataset, f, delta=0.2, max_iter_uni=np.inf, xi=10, p=
             best_fooling_rate = fooling_rate
             best_v = v
             np.save('.data/_universal.npy', best_v)
+        del dataset_perturbed
+        del est_labels_pert
     return v
