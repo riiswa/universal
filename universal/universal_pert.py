@@ -90,28 +90,29 @@ def universal_perturbation(dataset, f, delta=0.2, max_iter_uni=np.inf, xi=10, p=
         # Perturb the dataset with computed perturbation
         if device == 'cuda':
             torch.cuda.empty_cache()
-        dataset_perturbed = dataset + torch.from_numpy(v[0]).to(device)
+        with torch.no_grad():
+            dataset_perturbed = dataset + torch.from_numpy(v[0]).to(device)
 
-        est_labels_pert = torch.zeros((num_images)).to(device)
+            est_labels_pert = torch.zeros((num_images)).to(device)
 
-        num_batches = np.int(np.ceil(np.float(num_images) / np.float(batch_size)))
+            num_batches = np.int(np.ceil(np.float(num_images) / np.float(batch_size)))
 
-        # Compute the estimated labels in batches
-        for ii in range(0, num_batches):
-            m = (ii * batch_size)
-            M = min((ii+1)*batch_size, num_images)
-            if first_run:
-                est_labels_orig[m:M] = torch.argmax(f(dataset[m:M, :, :, :]), dim=1).flatten()
-            est_labels_pert[m:M] = torch.argmax(f(dataset_perturbed[m:M, :, :, :]), dim=1).flatten()
-        first_run = False
-        # Compute the fooling rate
-        fooling_rate = float(torch.sum(est_labels_pert != est_labels_orig) / float(num_images))
-        logging.info(f'FOOLING RATE = {fooling_rate}')
-        if fooling_rate > best_fooling_rate:
-            logging.info(f'Perturbation saved.')
-            best_fooling_rate = fooling_rate
-            best_v = v
-            np.save('.data/_universal.npy', best_v)
-        del dataset_perturbed
-        del est_labels_pert
+            # Compute the estimated labels in batches
+            for ii in range(0, num_batches):
+                m = (ii * batch_size)
+                M = min((ii+1)*batch_size, num_images)
+                if first_run:
+                    est_labels_orig[m:M] = torch.argmax(f(dataset[m:M, :, :, :]), dim=1).flatten()
+                est_labels_pert[m:M] = torch.argmax(f(dataset_perturbed[m:M, :, :, :]), dim=1).flatten()
+            first_run = False
+            # Compute the fooling rate
+            fooling_rate = float(torch.sum(est_labels_pert != est_labels_orig) / float(num_images))
+            logging.info(f'FOOLING RATE = {fooling_rate}')
+            if fooling_rate > best_fooling_rate:
+                logging.info(f'Perturbation saved.')
+                best_fooling_rate = fooling_rate
+                best_v = v
+                np.save('.data/_universal.npy', best_v)
+            del dataset_perturbed
+            del est_labels_pert
     return v
