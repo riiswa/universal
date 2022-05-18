@@ -4,14 +4,14 @@ import numpy as np
 import torch
 
 
-def deepfool(image, net, num_classes=10, overshoot=0.02, max_iter=10):
-    f_image = net(image).detach().numpy().flatten()
+def deepfool(image, net, num_classes=10, overshoot=0.02, max_iter=10, device='cpu'):
+    f_image = net(image).detach().cpu().numpy().flatten()
     I = (np.array(f_image)).flatten().argsort()[::-1]
 
     I = I[0:num_classes]
     label = I[0]
 
-    input_shape = image.detach().numpy().shape
+    input_shape = image.detach().cpu().numpy().shape
     pert_image = copy.deepcopy(image)
     w = np.zeros(input_shape)
     r_tot = np.zeros(input_shape)
@@ -28,18 +28,18 @@ def deepfool(image, net, num_classes=10, overshoot=0.02, max_iter=10):
 
         pert = np.inf
         fs[0, I[0]].backward(retain_graph=True)
-        grad_orig = x.grad.data.numpy().copy()
+        grad_orig = x.grad.data.cpu().numpy().copy()
 
         for k in range(1, num_classes):
 
             # x.zero_grad()
 
             fs[0, I[k]].backward(retain_graph=True)
-            cur_grad = x.grad.data.numpy().copy()
+            cur_grad = x.grad.data.cpu().numpy().copy()
 
             # set new w_k and new f_k
             w_k = cur_grad - grad_orig
-            f_k = (fs[0, I[k]] - fs[0, I[0]]).data.numpy()
+            f_k = (fs[0, I[k]] - fs[0, I[0]]).data.cpu().numpy()
 
             pert_k = abs(f_k) / np.linalg.norm(w_k.flatten())
 
@@ -53,11 +53,11 @@ def deepfool(image, net, num_classes=10, overshoot=0.02, max_iter=10):
         r_i = (pert + 1e-4) * w / np.linalg.norm(w)
         r_tot = np.float32(r_tot + r_i)
 
-        pert_image = image + (1 + overshoot) * torch.from_numpy(r_tot)
+        pert_image = image + (1 + overshoot) * torch.from_numpy(r_tot).to(device)
 
         x = pert_image.clone().detach().requires_grad_(True)
         fs = net(x[0])
-        k_i = np.argmax(fs.detach().numpy().flatten())
+        k_i = np.argmax(fs.detach().cpu().numpy().flatten())
 
         loop_i += 1
 

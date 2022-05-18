@@ -9,7 +9,6 @@ from universal.data_loading import download_training_data, download_testing_data
     get_test_dataset, VOCDataset, test_transforms, train_transforms, classes
 from universal.deepfool import deepfool
 from universal.plot import plot_images
-from universal.prediction_memory import PredictionMemory
 from universal.universal_pert import universal_perturbation
 from universal.vgg11_model import *
 import logging
@@ -83,7 +82,6 @@ if __name__ == '__main__':
 
         model.load_state_dict(pretrained_model.state_dict())
     del train_data
-    pm = PredictionMemory()
 
     def classifier(img):
         if img.ndim == 3:
@@ -118,93 +116,96 @@ if __name__ == '__main__':
         logging.info(f'Selected imgs = {ids}')
         logging.info(f'Classes distribution = {counts}')
         logging.info("Starting computation of universal perturbation...")
+        model.to(device)
         v = universal_perturbation(
-            torch.stack(imgs),
+            torch.stack(imgs).to(device),
             classifier,
             num_classes=len(classes),
             xi=2000,
             p=2,
             max_iter_uni=args.max_iter,
-            input_vector=np.load(args.input) if args.input else None
+            input_vector=np.load(args.input) if args.input else None,
+            device=device
         )
 
     if args.output:
         np.save(args.output, v)
 
     if args.visualize:
-        a = v.squeeze().transpose(1, 2, 0)
+        with torch.no_grad():
+            a = v.squeeze().transpose(1, 2, 0)
 
-        logging.info(f"Perturbation vector norm = {np.linalg.norm(abs(a))}")
-        a = np.abs(a)
-        perturbation = (a - np.min(a))/np.ptp(a)
-        plt.matshow(perturbation)
-        plt.show()
+            logging.info(f"Perturbation vector norm = {np.linalg.norm(abs(a))}")
+            a = np.abs(a)
+            perturbation = (a - np.min(a))/np.ptp(a)
+            plt.matshow(perturbation)
+            plt.show()
 
-        sample = random.sample(range(len(valid_data)), 25)
+            sample = random.sample(range(len(valid_data)), 25)
 
-        images, labels = zip(*[(image, label) for image, label in
-                               [valid_data[i] for i in sample]])
-        outputs = model(torch.stack(images).to(device))
-        _, predicted = outputs[0].max(1)
+            images, labels = zip(*[(image, label) for image, label in
+                                   [valid_data[i] for i in sample]])
+            outputs = model(torch.stack(images).to(device))
+            _, predicted = outputs[0].max(1)
 
-        plot_images(images, predicted, classes, true_labels=labels)
+            plot_images(images, predicted, classes, true_labels=labels)
 
-        images, labels = zip(*[(image + v.squeeze()*4, label) for image, label in
-                               [valid_data[i] for i in sample]])
-        outputs = model(torch.stack(images).to(device))
-        _, predicted_perturbed = outputs[0].max(1)
+            images, labels = zip(*[(image + v.squeeze()*4, label) for image, label in
+                                   [valid_data[i] for i in sample]])
+            outputs = model(torch.stack(images).to(device))
+            _, predicted_perturbed = outputs[0].max(1)
 
-        plot_images(images, predicted_perturbed, classes, true_labels=predicted)
+            plot_images(images, predicted_perturbed, classes, true_labels=predicted)
 
-        norms = np.linspace(0., 100., 25)
+            norms = np.linspace(0., 100., 25)
 
-        random_v = np.random.rand(1, 3, 224, 224) - 0.5
-        random_v = random_v.astype(np.float32)
-        v_norm = np.linalg.norm(np.abs(v[0]))
-        random_v_norm = np.linalg.norm(np.abs(random_v))
+            random_v = np.random.rand(1, 3, 224, 224) - 0.5
+            random_v = random_v.astype(np.float32)
+            v_norm = np.linalg.norm(np.abs(v[0]))
+            random_v_norm = np.linalg.norm(np.abs(random_v))
 
-        dataset = torch.stack([valid_data[i][0] for i in range(50)])
-        num_images = 50
+            dataset = torch.stack([valid_data[i][0] for i in range(50)])
+            num_images = 50
 
-        first_time = True
-        est_labels_orig = np.zeros((num_images))
+            first_time = True
+            est_labels_orig = np.zeros((num_images))
 
-        f1 = []
-        f2 = []
+            f1 = []
+            f2 = []
 
-        num_batches = np.int(np.ceil(np.float(num_images) / np.float(args.batch_size)))
+            num_batches = np.int(np.ceil(np.float(num_images) / np.float(args.batch_size)))
 
-        for norm in tqdm(norms):
+            for norm in tqdm(norms):
 
-            normalized_v = v * (norm / v_norm)
-            normalized_random_v = random_v * (norm / random_v_norm)
-            # print(norm, np.linalg.norm(np.abs(normalized_v)), np.linalg.norm(np.abs(normalized_random_v)))
+                normalized_v = v * (norm / v_norm)
+                normalized_random_v = random_v * (norm / random_v_norm)
+                # print(norm, np.linalg.norm(np.abs(normalized_v)), np.linalg.norm(np.abs(normalized_random_v)))
 
-            # Perturb the dataset with computed perturbation
-            dataset_perturbed = dataset + normalized_v[0]
-            dataset_perturbed2 = dataset + normalized_random_v
+                # Perturb the dataset with computed perturbation
+                dataset_perturbed = dataset + normalized_v[0]
+                dataset_perturbed2 = dataset + normalized_random_v
 
-            est_labels_pert = np.zeros((num_images))
-            est_labels_pert2 = np.zeros((num_images))
+                est_labels_pert = np.zeros((num_images))
+                est_labels_pert2 = np.zeros((num_images))
 
-            # Compute the estimated labels in batches
-            for ii in range(0, num_batches):
-                m = (ii * args.batch_size)
-                M = min((ii + 1) * args.batch_size, num_images)
-                if first_time:
-                    est_labels_orig[m:M] = np.argmax(classifier(dataset[m:M, :, :, :]).detach().numpy(), axis=1).flatten()
-                    first_time = False
-                est_labels_pert[m:M] = np.argmax(classifier(dataset_perturbed[m:M, :, :, :]).detach().numpy(), axis=1).flatten()
-                est_labels_pert2[m:M] = np.argmax(classifier(dataset_perturbed2[m:M, :, :, :]).detach().numpy(),
-                                                 axis=1).flatten()
-            fooling_rate = float(np.sum(est_labels_pert != est_labels_orig) / float(num_images))
-            fooling_rate2 = float(np.sum(est_labels_pert2 != est_labels_orig) / float(num_images))
-            f1.append(fooling_rate)
-            f2.append(fooling_rate2)
-            print(fooling_rate, fooling_rate2)
+                # Compute the estimated labels in batches
+                for ii in range(0, num_batches):
+                    m = (ii * args.batch_size)
+                    M = min((ii + 1) * args.batch_size, num_images)
+                    if first_time:
+                        est_labels_orig[m:M] = np.argmax(classifier(dataset[m:M, :, :, :]).detach().numpy(), axis=1).flatten()
+                        first_time = False
+                    est_labels_pert[m:M] = np.argmax(classifier(dataset_perturbed[m:M, :, :, :]).detach().numpy(), axis=1).flatten()
+                    est_labels_pert2[m:M] = np.argmax(classifier(dataset_perturbed2[m:M, :, :, :]).detach().numpy(),
+                                                     axis=1).flatten()
+                fooling_rate = float(np.sum(est_labels_pert != est_labels_orig) / float(num_images))
+                fooling_rate2 = float(np.sum(est_labels_pert2 != est_labels_orig) / float(num_images))
+                f1.append(fooling_rate)
+                f2.append(fooling_rate2)
+                print(fooling_rate, fooling_rate2)
 
-        plt.plot(norms**2, f1, label="Universal Perturbation")
-        plt.plot(norms**2, f2, label="Random Perturbation")
-        plt.legend()
-        plt.show()
+            plt.plot(norms**2, f1, label="Universal Perturbation")
+            plt.plot(norms**2, f2, label="Random Perturbation")
+            plt.legend()
+            plt.show()
 
