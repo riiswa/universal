@@ -120,7 +120,7 @@ if __name__ == '__main__':
             torch.stack(imgs).to(device),
             classifier,
             num_classes=len(classes),
-            xi=10,
+            xi=80,
             p=2,
             max_iter_uni=args.max_iter,
             #input_vector=np.load(args.input) if args.input else None,
