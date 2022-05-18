@@ -75,7 +75,7 @@ def universal_perturbation(dataset, f, delta=0.2, max_iter_uni=np.inf, xi=10, p=
                 dr = dr
                 # Make sure it converged...
                 if iter < max_iter_df-1:
-                    v = v + dr.cpu().detach().numpy()
+                    v = v + dr
                     # Project on l_p ball
                     v = proj_lp(v, xi, p)
 
