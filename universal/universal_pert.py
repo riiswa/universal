@@ -22,7 +22,7 @@ def proj_lp(v, xi, p):
     return v
 
 
-def universal_perturbation(dataset, f, delta=0.2, max_iter_uni=np.inf, xi=10, p=np.inf, num_classes=10, overshoot=0.02, max_iter_df=10, batch_size=25, input_vector=None, device='cpu'):
+def universal_perturbation(dataset, f, delta=0.2, max_iter_uni=np.inf, xi=10, p=np.inf, num_classes=10, overshoot=0.02, max_iter_df=10, batch_size=25, device='cpu'):
     """
     :param dataset: Images of size MxHxWxC (M: number of images)
 
@@ -45,10 +45,7 @@ def universal_perturbation(dataset, f, delta=0.2, max_iter_uni=np.inf, xi=10, p=
     :return: the universal perturbation.
     """
 
-    if input_vector is None:
-        v = np.zeros(dataset[0].unsqueeze(0).shape, dtype=np.float32)
-    else:
-        v = input_vector
+    v = np.zeros(dataset[0].unsqueeze(0).shape, dtype=np.float32)
 
     fooling_rate = 0.0
 
@@ -72,7 +69,7 @@ def universal_perturbation(dataset, f, delta=0.2, max_iter_uni=np.inf, xi=10, p=
         for k in (pbar := tqdm(range(0, num_images))):
             cur_img = dataset[k:(k+1), :, :, :]
             if f(cur_img).argmax() == f(cur_img+torch.from_numpy(v[0]).to(device)).argmax():
-                pbar.set_description(f'>> k = {k}, pass #{itr}')
+                pbar.set_description(f'>> k = {k}, pass #{itr}, norm ={np.linalg.norm(v)}')
 
                 # Compute adversarial perturbation
                 dr,iter,_,_,_ = deepfool(cur_img + torch.from_numpy(v[0]).to(device), f, num_classes=num_classes, overshoot=overshoot, max_iter=max_iter_df, device=device)

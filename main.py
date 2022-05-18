@@ -40,7 +40,6 @@ if __name__ == '__main__':
     parser.add_argument('-b', '--batch-size', type=int, help='', default=25)
     parser.add_argument('--image-per-class', type=int, help='', default=25)
     parser.add_argument('--max-iter', type=int, help='', default=np.inf)
-    parser.add_argument('-i', '--input', type=str, help='', default=None)
     args = parser.parse_args()
     logging.debug(args)
 
@@ -121,10 +120,10 @@ if __name__ == '__main__':
             torch.stack(imgs).to(device),
             classifier,
             num_classes=len(classes),
-            xi=2000,
-            p=2,
+            #xi=2000,
+            #p=2,
             max_iter_uni=args.max_iter,
-            input_vector=np.load(args.input) if args.input else None,
+            #input_vector=np.load(args.input) if args.input else None,
             device=device
         )
 
@@ -150,14 +149,14 @@ if __name__ == '__main__':
 
             plot_images(images, predicted, classes, true_labels=labels)
 
-            images, labels = zip(*[(image + v.squeeze()*4, label) for image, label in
+            images, labels = zip(*[(image + v.squeeze()*0.05, label) for image, label in
                                    [valid_data[i] for i in sample]])
             outputs = model(torch.stack(images).to(device))
             _, predicted_perturbed = outputs[0].max(1)
 
             plot_images(images, predicted_perturbed, classes, true_labels=predicted)
 
-            norms = np.linspace(0., 100., 25)
+            norms = np.linspace(0., 10000, 25)
 
             random_v = np.random.rand(1, 3, 224, 224) - 0.5
             random_v = random_v.astype(np.float32)
