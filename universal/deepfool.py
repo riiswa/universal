@@ -61,6 +61,10 @@ def deepfool(image, net, num_classes=10, overshoot=0.02, max_iter=10, device='cp
 
         loop_i += 1
 
+        print(loop_i, torch.linalg.norm(r_tot))
+
     r_tot = (1 + overshoot) * r_tot
+
+    print("final", torch.linalg.norm(r_tot))
 
     return r_tot, loop_i, label, k_i, pert_image
