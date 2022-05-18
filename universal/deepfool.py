@@ -45,13 +45,14 @@ def deepfool(image, net, num_classes=10, overshoot=0.02, max_iter=10, device='cp
 
             # determine which w_k to use
             if pert_k < pert:
+                print("pert_k", loop_i, torch.linalg.norm(pert))
                 pert = pert_k
                 w = w_k
 
         # compute r_i and r_tot
         # Added 1e-4 for numerical stability
         print(loop_i, torch.linalg.norm(pert))
-        print(loop_i, torch.linalg.norm(w))
+        #print(loop_i, torch.linalg.norm(w))
         r_i = ((pert + 1e-4) * w / torch.linalg.norm(w)).to(device)
         r_tot = r_tot + r_i
 
