@@ -5,16 +5,16 @@ import torch
 
 
 def deepfool(image, net, num_classes=10, overshoot=0.02, max_iter=10, device='cpu'):
-    f_image = net(image).flatten()
-    I = f_image.argsort(descending=True)
+    f_image = net(image).detach().cpu().numpy().flatten()
+    I = (np.array(f_image)).flatten().argsort()[::-1]
 
     I = I[0:num_classes]
     label = I[0]
 
-    input_shape = image.shape
-    pert_image = image.clone()
-    w = torch.zeros(input_shape).to(device)
-    r_tot = torch.zeros(input_shape).to(device)
+    input_shape = image.detach().cpu().numpy().shape
+    pert_image = copy.deepcopy(image)
+    w = np.zeros(input_shape)
+    r_tot = np.zeros(input_shape)
 
     loop_i = 0
 
@@ -28,24 +28,20 @@ def deepfool(image, net, num_classes=10, overshoot=0.02, max_iter=10, device='cp
 
         pert = np.inf
         fs[0, I[0]].backward(retain_graph=True)
-        grad_orig = x.grad.data.clone()
+        grad_orig = x.grad.data.cpu().numpy().copy()
 
         for k in range(1, num_classes):
 
             # x.zero_grad()
 
             fs[0, I[k]].backward(retain_graph=True)
-            cur_grad = x.grad.data.clone()
+            cur_grad = x.grad.data.cpu().numpy().copy()
 
             # set new w_k and new f_k
             w_k = cur_grad - grad_orig
-            print(torch.linalg.norm(fs[0, I[k]]), torch.linalg.norm(fs[0, I[0]]))
-            f_k = (fs[0, I[k]] - fs[0, I[0]]).data
-            #print("w_k", torch.linalg.norm(w_k))
-            #print("f_k", torch.linalg.norm(f_k))
+            f_k = (fs[0, I[k]] - fs[0, I[0]]).data.cpu().numpy()
 
-            pert_k = f_k.abs() / torch.linalg.norm(w_k.flatten())
-            #print("pert_k", loop_i, torch.linalg.norm(pert_k))
+            pert_k = abs(f_k) / np.linalg.norm(w_k.flatten())
 
             # determine which w_k to use
             if pert_k < pert:
@@ -54,23 +50,17 @@ def deepfool(image, net, num_classes=10, overshoot=0.02, max_iter=10, device='cp
 
         # compute r_i and r_tot
         # Added 1e-4 for numerical stability
-        print(loop_i, torch.linalg.norm(pert))
-        #print(loop_i, torch.linalg.norm(w))
-        r_i = ((pert + 1e-4) * w / torch.linalg.norm(w)).to(device)
-        r_tot = r_tot + r_i
+        r_i = (pert + 1e-4) * w / np.linalg.norm(w)
+        r_tot = np.float32(r_tot + r_i)
 
-
-        pert_image = image.to(device) + (1 + overshoot) * (r_tot.to(device))
+        pert_image = image + (1 + overshoot) * torch.from_numpy(r_tot)
 
         x = pert_image.clone().detach().requires_grad_(True)
-        fs = net(x[0].to(device))
-        k_i = fs.flatten().argmax()
+        fs = net(x[0])
+        k_i = np.argmax(fs.detach().cpu().numpy().flatten())
 
         loop_i += 1
 
-
     r_tot = (1 + overshoot) * r_tot
-
-    print("final", torch.linalg.norm(r_tot))
 
     return r_tot, loop_i, label, k_i, pert_image
