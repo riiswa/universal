@@ -120,8 +120,8 @@ if __name__ == '__main__':
             torch.stack(imgs).to(device),
             classifier,
             num_classes=len(classes),
-            #xi=2000,
-            #p=2,
+            xi=2000,
+            p=2,
             max_iter_uni=args.max_iter,
             #input_vector=np.load(args.input) if args.input else None,
             device=device
@@ -149,7 +149,7 @@ if __name__ == '__main__':
 
             plot_images(images, predicted, classes, true_labels=labels)
 
-            images, labels = zip(*[(image + v.squeeze()*0.05, label) for image, label in
+            images, labels = zip(*[(image + v.squeeze(), label) for image, label in
                                    [valid_data[i] for i in sample]])
             outputs = model(torch.stack(images).to(device))
             _, predicted_perturbed = outputs[0].max(1)
