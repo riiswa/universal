@@ -75,11 +75,11 @@ def universal_perturbation(dataset, f, delta=0.2, max_iter_uni=np.inf, xi=10, p=
                 # Compute adversarial perturbation
                 dr,iter,_,_,_ = deepfool(cur_img + torch.from_numpy(v[0]).to(device), f, num_classes=num_classes, overshoot=overshoot, max_iter=max_iter_df, device=device)
                 dr = dr
-                print("dr", dr)
+                print("dr", torch.linalg.norm(dr))
                 # Make sure it converged...
                 if iter < max_iter_df-1:
                     v = v + dr.cpu().detach().numpy()
-                    print("v after + dr", v)
+                    print("v after + dr", np.linalg.norm(v))
                     # Project on l_p ball
                     v = proj_lp(v, xi, p)
             print("post", np.linalg.norm(v))
