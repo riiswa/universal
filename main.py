@@ -120,7 +120,7 @@ if __name__ == '__main__':
             torch.stack(imgs).to(device),
             classifier,
             num_classes=len(classes),
-            xi=80,
+            xi=2000/255,
             p=2,
             max_iter_uni=args.max_iter,
             #input_vector=np.load(args.input) if args.input else None,
@@ -159,7 +159,7 @@ if __name__ == '__main__':
 
             plot_images(images, predicted_perturbed, classes, true_labels=predicted)
 
-            norms = np.linspace(0., 10000, 25)
+            norms = np.linspace(0., 10000/255, 100)
 
             random_v = np.random.rand(1, 3, 224, 224) - 0.5
             random_v = random_v.astype(np.float32)
