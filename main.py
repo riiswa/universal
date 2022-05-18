@@ -79,8 +79,8 @@ if __name__ == '__main__':
 
         final_fc = nn.Linear(IN_FEATURES, OUTPUT_DIM)
         pretrained_model.classifier[-1] = final_fc
-
         model.load_state_dict(pretrained_model.state_dict())
+        # TODO
     del train_data
 
     def classifier(img):

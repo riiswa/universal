@@ -1,10 +1,10 @@
 # Universal adversarial perturbations
 
-*matlab*: MATLAB code to generate universal perturbations, using [Caffe](https://github.com/BVLC/caffe) or [MatConvNet](https://github.com/vlfeat/matconvnet).
+## Perturbation example with pretrained VGG-11
 
-*python*: Python code to generate universal perturbations using [TensorFlow](https://github.com/tensorflow/tensorflow).
-
-*precomputed*: Precomputed universal perturbations, for pre-trained models on ImageNet.
+```bash
+python main.py -s vg11-voc2012-model.pt -d 'cpu' -p p.npy -v
+```
 
 ## Reference
 [1] S. Moosavi-Dezfooli\*, A. Fawzi\*, O. Fawzi, P. Frossard:
