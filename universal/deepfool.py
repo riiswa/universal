@@ -45,7 +45,7 @@ def deepfool(image, net, num_classes=10, overshoot=0.02, max_iter=10, device='cp
 
             # determine which w_k to use
             if pert_k < pert:
-                print("pert_k", loop_i, torch.linalg.norm(pert))
+                print("pert_k", loop_i, torch.linalg.norm(pert_k))
                 pert = pert_k
                 w = w_k
 
