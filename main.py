@@ -4,6 +4,7 @@ import gc
 import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
+from PIL import Image
 
 from universal.data_loading import download_training_data, download_testing_data, get_trainval_dataset, \
     get_test_dataset, VOCDataset, test_transforms, train_transforms, classes
@@ -120,7 +121,7 @@ if __name__ == '__main__':
             torch.stack(imgs).to(device),
             classifier,
             num_classes=len(classes),
-            xi=4000/255,
+            xi=(950*2000)/98935,
             p=2,
             max_iter_uni=args.max_iter,
             #input_vector=np.load(args.input) if args.input else None,
@@ -148,8 +149,6 @@ if __name__ == '__main__':
             _, predicted = outputs[0].max(1)
 
             plot_images(images, predicted, classes, true_labels=labels)
-
-            print(np.linalg.norm(valid_data[0][0]))
 
             images, labels = zip(*[(image + v.squeeze(), label) for image, label in
                                    [valid_data[i] for i in sample]])
