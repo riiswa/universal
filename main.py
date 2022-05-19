@@ -35,12 +35,13 @@ if __name__ == '__main__':
     parser.add_argument('--test-data', type=str, help='Directory that contains test data', default='.data/VOC2012_TEST')
     parser.add_argument('-f', '--force-download', action='store_true', default=False)
     parser.add_argument('-d', '--device', type=str, help='', default='cuda' if torch.cuda.is_available() else 'cpu')
-    parser.add_argument('-v', '--visualize', help='', action='store_true', default=False)
+    #parser.add_argument('-v', '--visualize', help='', action='store_true', default=False)
     parser.add_argument('-p', '--perturbation', type=str, help='', default=None)
     parser.add_argument('-o', '--output', type=str, help='', default=None)
     parser.add_argument('-b', '--batch-size', type=int, help='', default=25)
     parser.add_argument('--image-per-class', type=int, help='', default=25)
     parser.add_argument('--max-iter', type=int, help='', default=np.inf)
+    parser.add_argument('--exp1', action='store_true', default=False)
     args = parser.parse_args()
     logging.debug(args)
 
@@ -60,12 +61,6 @@ if __name__ == '__main__':
     train_data = VOCDataset(train_data_df, args.train_data, train_transforms)
     valid_data = VOCDataset(valid_data_df, args.train_data, test_transforms)
     # test_data = VOCDataset(test_data_df, args.test_data, test_transforms)
-
-    if args.visualize:
-        images, labels = zip(*[(image, label) for image, label in
-                               [train_data[i] for i in random.sample(range(len(train_data)), 25)]])
-
-        plot_images(images, labels, classes)
 
     if args.state_dict:
         logging.info(f"State dict {args.state_dict} found. Load pretrained weights.")
@@ -134,42 +129,17 @@ if __name__ == '__main__':
     if args.output:
         np.save(args.output, v)
 
-    if args.visualize:
+    if args.exp1:
         with torch.no_grad():
-            a = v.squeeze().transpose(1, 2, 0)
-
-            logging.info(f"Perturbation vector norm = {np.linalg.norm(abs(a))}")
-            a = np.abs(a)
-            perturbation = (a - np.min(a))/np.ptp(a)
-            plt.matshow(perturbation)
-            plt.show()
-
-            sample = random.sample(range(len(valid_data)), 25)
-
-            images, labels = zip(*[(image, label) for image, label in
-                                   [valid_data[i] for i in sample]])
-            outputs = model(torch.stack(images).to(device))
-            _, predicted = outputs[0].max(1)
-
-            plot_images(images, predicted, classes, true_labels=labels)
-
-            images, labels = zip(*[(image + v.squeeze(), label) for image, label in
-                                   [valid_data[i] for i in sample]])
-
-            outputs = model(torch.stack(images).to(device))
-            _, predicted_perturbed = outputs[0].max(1)
-
-            plot_images(images, predicted_perturbed, classes, true_labels=predicted)
-
             norms = np.linspace(0., 10000, 100)
 
-            random_v = np.random.rand(1, 3, 224, 224) - 0.5
+            random_v = np.random.rand(1, 3, 224, 224)
             random_v = random_v.astype(np.float32)
-            v_norm = np.linalg.norm(np.abs(v[0]))
-            random_v_norm = np.linalg.norm(np.abs(random_v))
+            v_norm = np.linalg.norm(v[0])
+            random_v_norm = np.linalg.norm(random_v)
 
-            dataset = torch.stack([valid_data[i][0] for i in range(50)])
-            num_images = 50
+            dataset = torch.stack([valid_data[i][0] for i in range(len(valid_data))])
+            num_images = len(valid_data)
 
             first_time = True
             est_labels_orig = np.zeros((num_images))
@@ -180,7 +150,7 @@ if __name__ == '__main__':
             num_batches = np.int(np.ceil(np.float(num_images) / np.float(args.batch_size)))
 
             for norm in tqdm(norms):
-                norm = (950 * norm) / 98935
+                norm = norm / 255
                 normalized_v = v * (norm / v_norm)
                 normalized_random_v = random_v * (norm / random_v_norm)
                 # print(norm, np.linalg.norm(np.abs(normalized_v)), np.linalg.norm(np.abs(normalized_random_v)))
@@ -200,14 +170,15 @@ if __name__ == '__main__':
                         est_labels_orig[m:M] = np.argmax(classifier(dataset[m:M, :, :, :]).detach().numpy(), axis=1).flatten()
 
                     est_labels_pert[m:M] = np.argmax(classifier(dataset_perturbed[m:M, :, :, :]).detach().numpy(), axis=1).flatten()
-                    est_labels_pert2[m:M] = np.argmax(classifier(dataset_perturbed2[m:M, :, :, :]).detach().numpy(),
-                                                     axis=1).flatten()
+                    est_labels_pert2[m:M] = np.argmax(classifier(dataset_perturbed2[m:M, :, :, :]).detach().numpy(), axis=1).flatten()
                 first_time = False
                 fooling_rate = float(np.sum(est_labels_pert != est_labels_orig) / float(num_images))
                 fooling_rate2 = float(np.sum(est_labels_pert2 != est_labels_orig) / float(num_images))
                 f1.append(fooling_rate)
                 f2.append(fooling_rate2)
-                print(fooling_rate, fooling_rate2)
+
+            print(fooling_rate)
+            print(fooling_rate2)
 
             plt.plot(norms**2, f1, label="Universal Perturbation")
             plt.plot(norms**2, f2, label="Random Perturbation")
