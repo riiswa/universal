@@ -139,7 +139,7 @@ if __name__ == '__main__':
             v_norm = np.linalg.norm(v[0])
             random_v_norm = np.linalg.norm(random_v)
 
-            dataset = torch.stack([valid_data[i][0] for i in random.sample(range(2000), 2000)])
+            dataset = torch.stack([valid_data[i][0] for i in range(len(valid_data))])
             num_images = len(valid_data)
 
             first_time = True
@@ -165,6 +165,8 @@ if __name__ == '__main__':
 
                 # Compute the estimated labels in batches
                 for ii in range(0, num_batches):
+                    if device == 'cuda':
+                        torch.cuda.empty_cache()
                     m = (ii * args.batch_size)
                     M = min((ii + 1) * args.batch_size, num_images)
                     if first_time:
