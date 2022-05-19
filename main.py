@@ -138,7 +138,7 @@ if __name__ == '__main__':
             v_norm = np.linalg.norm(v[0])
             random_v_norm = np.linalg.norm(random_v)
 
-            dataset = torch.stack([valid_data[i][0] for i in range(len(valid_data))])
+            dataset = torch.stack([valid_data[i][0] for i in range(len(valid_data))]).to(device)
             num_images = len(valid_data)
 
             first_time = True
