@@ -132,7 +132,7 @@ if __name__ == '__main__':
 
     if args.exp1:
         with torch.no_grad():
-            norms = np.linspace(0., 10000, 100)
+            norms = np.linspace(0., 10000, 50)
 
             random_v = np.random.rand(1, 3, 224, 224)
             random_v = random_v.astype(np.float32)
@@ -178,7 +178,7 @@ if __name__ == '__main__':
                 fooling_rate = float(np.sum(est_labels_pert != est_labels_orig) / float(num_images))
                 fooling_rate2 = float(np.sum(est_labels_pert2 != est_labels_orig) / float(num_images))
                 print(fooling_rate)
-                print(fooling_rate)
+                print(fooling_rate2)
                 f1.append(fooling_rate)
                 f2.append(fooling_rate2)
 
