@@ -182,10 +182,10 @@ if __name__ == '__main__':
                 f1.append(fooling_rate)
                 f2.append(fooling_rate2)
 
-            print(fooling_rate)
-            print(fooling_rate2)
+            print(f1)
+            print(f2)
 
-            np.save("exp1.npy", np.array([fooling_rate, fooling_rate2]))
+            np.save("exp1.npy", np.array([f1, f2]))
 
 
 
