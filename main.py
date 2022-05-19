@@ -185,8 +185,7 @@ if __name__ == '__main__':
             print(fooling_rate)
             print(fooling_rate2)
 
-            plt.plot(norms**2, f1, label="Universal Perturbation")
-            plt.plot(norms**2, f2, label="Random Perturbation")
-            plt.legend()
-            plt.show()
+            np.save("exp1.npy", np.array([fooling_rate, fooling_rate2]))
+
+
 
