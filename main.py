@@ -177,6 +177,8 @@ if __name__ == '__main__':
                 first_time = False
                 fooling_rate = float(np.sum(est_labels_pert != est_labels_orig) / float(num_images))
                 fooling_rate2 = float(np.sum(est_labels_pert2 != est_labels_orig) / float(num_images))
+                print(fooling_rate)
+                print(fooling_rate)
                 f1.append(fooling_rate)
                 f2.append(fooling_rate2)
 
