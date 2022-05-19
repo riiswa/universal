@@ -43,6 +43,14 @@ test_transforms = transforms.Compose([
                          std=pretrained_stds)
 ])
 
+normalize = transforms.Normalize(mean=pretrained_means, std=pretrained_stds)
+
+universal_transforms = transforms.Compose([
+    transforms.Resize(pretrained_size),
+    transforms.CenterCrop(pretrained_size),
+    transforms.ToTensor(),
+])
+
 
 def load_csv(dir, c, suffix):
     return pd.read_csv(f"{dir}/ImageSets/Main/{c}_{suffix}.txt", delimiter=r"\s+", header=None, names=('id', c))

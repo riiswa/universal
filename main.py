@@ -7,7 +7,7 @@ from tqdm import tqdm
 from PIL import Image
 
 from universal.data_loading import download_training_data, download_testing_data, get_trainval_dataset, \
-    get_test_dataset, VOCDataset, test_transforms, train_transforms, classes
+    get_test_dataset, VOCDataset, test_transforms, train_transforms, classes, universal_transforms, normalize
 from universal.deepfool import deepfool
 from universal.plot import plot_images
 from universal.universal_pert import universal_perturbation
@@ -86,12 +86,15 @@ if __name__ == '__main__':
     def classifier(img):
         if img.ndim == 3:
             img = img.unsqueeze(0)
+        img = normalize(img)
         v = model(img)[0]
         return v
 
     gc.collect()
 
     file_perturbation = os.path.join('.data', 'universal.npy')
+
+    valid_data.transform = universal_transforms
 
     if args.perturbation:
         v = np.load(args.perturbation)
@@ -121,7 +124,7 @@ if __name__ == '__main__':
             torch.stack(imgs).to(device),
             classifier,
             num_classes=len(classes),
-            xi=(950*2000)/98935,
+            xi=2000/255,
             p=2,
             max_iter_uni=args.max_iter,
             #input_vector=np.load(args.input) if args.input else None,
@@ -158,7 +161,7 @@ if __name__ == '__main__':
 
             plot_images(images, predicted_perturbed, classes, true_labels=predicted)
 
-            norms = np.linspace(0., 10000/255, 100)
+            norms = np.linspace(0., 10000, 100)
 
             random_v = np.random.rand(1, 3, 224, 224) - 0.5
             random_v = random_v.astype(np.float32)
@@ -177,7 +180,7 @@ if __name__ == '__main__':
             num_batches = np.int(np.ceil(np.float(num_images) / np.float(args.batch_size)))
 
             for norm in tqdm(norms):
-
+                norm = (950 * norm) / 98935
                 normalized_v = v * (norm / v_norm)
                 normalized_random_v = random_v * (norm / random_v_norm)
                 # print(norm, np.linalg.norm(np.abs(normalized_v)), np.linalg.norm(np.abs(normalized_random_v)))
