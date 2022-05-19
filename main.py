@@ -168,10 +168,10 @@ if __name__ == '__main__':
                     m = (ii * args.batch_size)
                     M = min((ii + 1) * args.batch_size, num_images)
                     if first_time:
-                        est_labels_orig[m:M] = np.argmax(classifier(dataset[m:M, :, :, :].to(device)).detach().numpy(), axis=1).flatten()
+                        est_labels_orig[m:M] = np.argmax(classifier(dataset[m:M, :, :, :].to(device)).detach().cpu().numpy(), axis=1).flatten()
 
-                    est_labels_pert[m:M] = np.argmax(classifier(dataset_perturbed[m:M, :, :, :].to(device)).detach().numpy(), axis=1).flatten()
-                    est_labels_pert2[m:M] = np.argmax(classifier(dataset_perturbed2[m:M, :, :, :].to(device)).detach().numpy(), axis=1).flatten()
+                    est_labels_pert[m:M] = np.argmax(classifier(dataset_perturbed[m:M, :, :, :].to(device)).detach().cpu().numpy(), axis=1).flatten()
+                    est_labels_pert2[m:M] = np.argmax(classifier(dataset_perturbed2[m:M, :, :, :].to(device)).detach().cpu().numpy(), axis=1).flatten()
                 first_time = False
                 fooling_rate = float(np.sum(est_labels_pert != est_labels_orig) / float(num_images))
                 fooling_rate2 = float(np.sum(est_labels_pert2 != est_labels_orig) / float(num_images))
