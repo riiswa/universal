@@ -78,6 +78,8 @@ if __name__ == '__main__':
         # TODO
     del train_data
 
+    model.to(device)
+
     def classifier(img):
         if img.ndim == 3:
             img = img.unsqueeze(0)
@@ -114,7 +116,6 @@ if __name__ == '__main__':
         logging.info(f'Selected imgs = {ids}')
         logging.info(f'Classes distribution = {counts}')
         logging.info("Starting computation of universal perturbation...")
-        model.to(device)
         v = universal_perturbation(
             torch.stack(imgs).to(device),
             classifier,
