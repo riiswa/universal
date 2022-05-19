@@ -167,7 +167,6 @@ if __name__ == '__main__':
                     m = (ii * args.batch_size)
                     M = min((ii + 1) * args.batch_size, num_images)
                     if first_time:
-                        print(dataset[m:M, :, :, :].to(device))
                         est_labels_orig[m:M] = np.argmax(classifier(dataset[m:M, :, :, :].to(device)).detach().numpy(), axis=1).flatten()
 
                     est_labels_pert[m:M] = np.argmax(classifier(dataset_perturbed[m:M, :, :, :].to(device)).detach().numpy(), axis=1).flatten()
