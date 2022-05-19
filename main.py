@@ -138,7 +138,7 @@ if __name__ == '__main__':
             v_norm = np.linalg.norm(v[0])
             random_v_norm = np.linalg.norm(random_v)
 
-            dataset = torch.stack([valid_data[i][0] for i in range(len(valid_data))]).to(device)
+            dataset = torch.stack([valid_data[i][0] for i in random.sample(range(2000), 2000)]).cpu()
             num_images = len(valid_data)
 
             first_time = True
@@ -156,8 +156,8 @@ if __name__ == '__main__':
                 # print(norm, np.linalg.norm(np.abs(normalized_v)), np.linalg.norm(np.abs(normalized_random_v)))
 
                 # Perturb the dataset with computed perturbation
-                dataset_perturbed = dataset + torch.from_numpy(normalized_v[0]).to(device)
-                dataset_perturbed2 = dataset + torch.from_numpy(normalized_random_v).to(device)
+                dataset_perturbed = dataset + torch.from_numpy(normalized_v[0])
+                dataset_perturbed2 = dataset + torch.from_numpy(normalized_random_v)
 
                 est_labels_pert = np.zeros((num_images))
                 est_labels_pert2 = np.zeros((num_images))
@@ -167,10 +167,10 @@ if __name__ == '__main__':
                     m = (ii * args.batch_size)
                     M = min((ii + 1) * args.batch_size, num_images)
                     if first_time:
-                        est_labels_orig[m:M] = np.argmax(classifier(dataset[m:M, :, :, :]).detach().numpy(), axis=1).flatten()
+                        est_labels_orig[m:M] = np.argmax(classifier(dataset[m:M, :, :, :].to(device)).detach().numpy(), axis=1).flatten()
 
-                    est_labels_pert[m:M] = np.argmax(classifier(dataset_perturbed[m:M, :, :, :]).detach().numpy(), axis=1).flatten()
-                    est_labels_pert2[m:M] = np.argmax(classifier(dataset_perturbed2[m:M, :, :, :]).detach().numpy(), axis=1).flatten()
+                    est_labels_pert[m:M] = np.argmax(classifier(dataset_perturbed[m:M, :, :, :].to(device)).detach().numpy(), axis=1).flatten()
+                    est_labels_pert2[m:M] = np.argmax(classifier(dataset_perturbed2[m:M, :, :, :].to(device)).detach().numpy(), axis=1).flatten()
                 first_time = False
                 fooling_rate = float(np.sum(est_labels_pert != est_labels_orig) / float(num_images))
                 fooling_rate2 = float(np.sum(est_labels_pert2 != est_labels_orig) / float(num_images))
