@@ -156,8 +156,8 @@ if __name__ == '__main__':
                 # print(norm, np.linalg.norm(np.abs(normalized_v)), np.linalg.norm(np.abs(normalized_random_v)))
 
                 # Perturb the dataset with computed perturbation
-                dataset_perturbed = dataset + normalized_v[0]
-                dataset_perturbed2 = dataset + normalized_random_v
+                dataset_perturbed = dataset + torch.from_numpy(normalized_v[0]).to(device)
+                dataset_perturbed2 = dataset + torch.from_numpy(normalized_random_v).to(device)
 
                 est_labels_pert = np.zeros((num_images))
                 est_labels_pert2 = np.zeros((num_images))
