@@ -2,6 +2,7 @@ import os
 import gc
 
 import numpy as np
+import scipy.io
 from tqdm import tqdm
 
 from universal.data_loading import download_training_data, get_trainval_dataset, VOCDataset, test_transforms, \
@@ -112,14 +113,21 @@ if __name__ == '__main__':
         np.save(args.output, v)
 
     if args.exp1:
+        dataset = torch.stack([valid_data[i][0] for i in range(len(valid_data))])
         experiment1(
             np.linspace(0., 10000, 10), [v[0],
                                          np.random.uniform(
                                              low=v.min(),
                                              high=v.max(),
-                                             size=(1, 3, 224, 224)
-                                         ).astype(np.float32)],
-            torch.stack([valid_data[i][0] for i in range(len(valid_data))]),
+                                             size=(1, 3, 224, 224),
+                                         ).astype(np.float32),
+                                         dataset.mean(dim=0).unsqueeze(0).numpy(),
+                                         np.expand_dims(
+                                             scipy.io.loadmat('precomputed/VGG-16.mat')['r'].transpose(2, 0, 1),
+                                             0
+                                         )
+                                         ],
+            dataset,
             classifier,
             args.batch_size,
             device
