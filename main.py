@@ -115,7 +115,7 @@ if __name__ == '__main__':
     if args.exp1:
         dataset = torch.stack([valid_data[i][0] for i in range(len(valid_data))])
         experiment1(
-            np.linspace(0., 10000, 10), [v[0],
+            np.linspace(0., 10000, 20), [v[0],
                                          np.random.uniform(
                                              low=v.min(),
                                              high=v.max(),
@@ -124,6 +124,10 @@ if __name__ == '__main__':
                                          dataset.mean(dim=0).unsqueeze(0).numpy(),
                                          np.expand_dims(
                                              scipy.io.loadmat('precomputed/VGG-16.mat')['r'].transpose(2, 0, 1),
+                                             0
+                                         ),
+                                         np.expand_dims(
+                                             scipy.io.loadmat('precomputed/VGG-19.mat')['r'].transpose(2, 0, 1),
                                              0
                                          )
                                          ],
