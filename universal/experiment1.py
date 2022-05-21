@@ -11,7 +11,7 @@ def experiment1(norms, perturbations, dataset, f, batch_size, device):
         first_time = True
         est_labels_orig = np.zeros(num_images)
 
-        fooling_rates = [[]] * num_perts
+        fooling_rates = [[] for _ in range(num_perts)]
 
         num_batches = np.int(np.ceil(np.float(num_images) / np.float(batch_size)))
 
