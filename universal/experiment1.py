@@ -37,8 +37,8 @@ def experiment1(norms, perturbations, dataset, f, batch_size, device):
                         np.argmax(f(perturbed_datasets[i][m:M, :, :, :].to(device)).detach().cpu().numpy(), axis=1) \
                             .flatten()
                 first_time = False
-                for i in range(num_perts):
-                    fooling_rates[i].append(float(np.sum(est_labels_perts[i] != est_labels_orig) / float(num_images)))
-                pbar.set_description(str([fr[-1] for fr in fooling_rates]))
+            for i in range(num_perts):
+                fooling_rates[i].append(float(np.sum(est_labels_perts[i] != est_labels_orig) / float(num_images)))
+            pbar.set_description(str([fr[-1] for fr in fooling_rates]))
         np.save("exp1.npy", np.array(fooling_rates))
 
