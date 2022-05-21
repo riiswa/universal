@@ -6,6 +6,7 @@ from tqdm import tqdm
 def experiment1(norms, perturbations, dataset, f, batch_size, device):
     with torch.no_grad():
         perturbations_norm = [np.linalg.norm(p) for p in perturbations]
+        print(perturbations_norm)
         num_images = len(dataset)
         num_perts = len(perturbations)
         first_time = True
