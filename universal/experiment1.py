@@ -6,13 +6,12 @@ from tqdm import tqdm
 def experiment1(norms, perturbations, dataset, f, batch_size, device):
     with torch.no_grad():
         perturbations_norm = [np.linalg.norm(p) for p in perturbations]
-        print(perturbations_norm)
         num_images = len(dataset)
         num_perts = len(perturbations)
         first_time = True
         est_labels_orig = np.zeros(num_images)
 
-        fooling_rates = [[]] * len(perturbations)
+        fooling_rates = [[]] * num_perts
 
         num_batches = np.int(np.ceil(np.float(num_images) / np.float(batch_size)))
 
@@ -37,7 +36,7 @@ def experiment1(norms, perturbations, dataset, f, batch_size, device):
                     est_labels_perts[i][m:M] = \
                         np.argmax(f(perturbed_datasets[i][m:M, :, :, :].to(device)).detach().cpu().numpy(), axis=1) \
                             .flatten()
-                first_time = False
+            first_time = False
             for i in range(num_perts):
                 fooling_rates[i].append(float(np.sum(est_labels_perts[i] != est_labels_orig) / float(num_images)))
             pbar.set_description(str([fr[-1] for fr in fooling_rates]))
