@@ -8,6 +8,7 @@ from tqdm import tqdm
 from universal.data_loading import download_training_data, get_trainval_dataset, VOCDataset, test_transforms, \
     train_transforms, classes, universal_transforms, normalize
 from universal.experiment1 import experiment1
+from universal.experiment2 import experiment2
 from universal.universal_pert import universal_perturbation
 from universal.vgg11_model import *
 import logging
@@ -34,6 +35,7 @@ if __name__ == '__main__':
     parser.add_argument('--image-per-class', type=int, help='', default=25)
     parser.add_argument('--max-iter', type=int, help='', default=np.inf)
     parser.add_argument('--exp1', action='store_true', default=False)
+    parser.add_argument('--exp2', action='store_true', default=False)
     args = parser.parse_args()
     logging.debug(args)
 
@@ -136,3 +138,7 @@ if __name__ == '__main__':
             args.batch_size,
             device
         )
+
+    if args.exp2:
+        dataset = torch.stack([valid_data[i][0] for i in range(len(valid_data))])
+        experiment2(v[0], dataset, classifier, args.batch_size, device)

@@ -29,8 +29,8 @@ def plot_images(images, labels, classes, true_labels=None, normalize=True):
 
         ax.imshow(image.permute(1, 2, 0).cpu().numpy())
         if not true_labels is None:
-            ax.set_title(f"{classes[true_labels[i]]} -> {classes[labels[i]]}", color='green' if labels[i] == true_labels[i] else 'red')
+            ax.set_title(f"{classes[true_labels[i]]} → {classes[labels[i]]}", color='green' if labels[i] == true_labels[i] else 'red')
         else:
             ax.set_title(classes[labels[i]])
         ax.axis('off')
-    plt.show()
+    return fig
