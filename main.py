@@ -42,7 +42,7 @@ if __name__ == '__main__':
     model = VGG(vgg11_layers, OUTPUT_DIM, device)
     logging.info(f"Device = {device}")
 
-    logging.info(f"Prepare data. Train/validation data: {args.train_data}, Test data: {args.test_data}")
+    logging.info(f"Prepare data. Train/validation data: {args.train_data}")
     os.makedirs('.data/', exist_ok=True)
     download_training_data(args.train_data, args.force_download)
     train_data_df, valid_data_df = get_trainval_dataset(args.train_data)
