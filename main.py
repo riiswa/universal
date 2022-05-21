@@ -121,6 +121,6 @@ if __name__ == '__main__':
                                          ).astype(np.float32)],
             torch.stack([valid_data[i][0] for i in range(len(valid_data))]),
             classifier,
-            args.bath_size,
+            args.batch_size,
             device
         )
