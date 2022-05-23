@@ -4,6 +4,7 @@ from tqdm import tqdm
 
 
 def experiment1(norms, perturbations, dataset, f, batch_size, device):
+    # Run first experiment: Compare computed perturbation with others.
     with torch.no_grad():
         perturbations_norm = [np.linalg.norm(p) for p in perturbations]
         num_images = len(dataset)

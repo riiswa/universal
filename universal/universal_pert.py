@@ -6,24 +6,26 @@ import torch
 from universal.deepfool import deepfool
 from tqdm import tqdm
 
-def proj_lp(v, xi, p):
 
+def proj_lp(v, xi, p):
     # Project on the lp ball centered at 0 and of radius xi
 
     # SUPPORTS only p = 2 and p = Inf for now
     if p == 2:
-        v = v * min(1, xi/np.linalg.norm(v.flatten()))
+        v = v * min(1, xi / np.linalg.norm(v.flatten()))
         # v = v / np.linalg.norm(v.flatten(1)) * xi
     elif p == np.inf:
         v = np.sign(v) * np.minimum(abs(v), xi)
     else:
-         raise ValueError('Values of p different from 2 and Inf are currently not supported...')
+        raise ValueError('Values of p different from 2 and Inf are currently not supported...')
 
     return v
 
 
-def universal_perturbation(dataset, f, delta=0.2, max_iter_uni=np.inf, xi=10, p=np.inf, num_classes=10, overshoot=0.02, max_iter_df=10, batch_size=25, device='cpu'):
-    """
+def universal_perturbation(dataset, f, delta=0.2, max_iter_uni=np.inf, xi=10, p=np.inf, num_classes=10, overshoot=0.02,
+                           max_iter_df=10, batch_size=25, device='cpu'):
+    """ Compute the universal perturbation.
+
     :param dataset: Images of size MxHxWxC (M: number of images)
 
     :param f: feedforward function (input: images, output: values of activation BEFORE softmax).
@@ -42,6 +44,10 @@ def universal_perturbation(dataset, f, delta=0.2, max_iter_uni=np.inf, xi=10, p=
 
     :param max_iter_df: maximum number of iterations for deepfool (default = 10)
 
+    :param device: Device on which a torch.Tensor will be allocated for heavy computations.
+
+    :param batch_size: Size of batch of inference.
+
     :return: the universal perturbation.
     """
 
@@ -52,30 +58,31 @@ def universal_perturbation(dataset, f, delta=0.2, max_iter_uni=np.inf, xi=10, p=
     best_v = None
     best_fooling_rate = -1
 
-    num_images = np.shape(dataset)[0] # The images should be stacked ALONG FIRST DIMENSION
+    num_images = np.shape(dataset)[0]  # The images should be stacked ALONG FIRST DIMENSION
 
     first_run = True
 
     est_labels_orig = torch.zeros((num_images)).to(device)
 
     itr = 0
-    while fooling_rate < 1-delta and itr < max_iter_uni:
+    while fooling_rate < 1 - delta and itr < max_iter_uni:
         # Shuffle the dataset
         # np.random.shuffle(dataset)
 
-        print ('Starting pass number ', itr)
+        print('Starting pass number ', itr)
 
         # Go through the data set and compute the perturbation increments sequentially
         for k in (pbar := tqdm(range(0, num_images))):
-            cur_img = dataset[k:(k+1), :, :, :]
-            if f(cur_img).argmax() == f(cur_img+torch.from_numpy(v[0]).to(device)).argmax():
+            cur_img = dataset[k:(k + 1), :, :, :]
+            if f(cur_img).argmax() == f(cur_img + torch.from_numpy(v[0]).to(device)).argmax():
                 pbar.set_description(f'>> k = {k}, pass #{itr}, norm ={np.linalg.norm(v)}')
 
                 # Compute adversarial perturbation
-                dr,iter,_,_,_ = deepfool(cur_img + torch.from_numpy(v[0]).to(device), f, num_classes=num_classes, overshoot=overshoot, max_iter=max_iter_df, device=device)
+                dr, iter, _, _, _ = deepfool(cur_img + torch.from_numpy(v[0]).to(device), f, num_classes=num_classes,
+                                             overshoot=overshoot, max_iter=max_iter_df, device=device)
                 dr = dr
                 # Make sure it converged...
-                if iter < max_iter_df-1:
+                if iter < max_iter_df - 1:
                     v = v + dr
                     # Project on l_p ball
                     v = proj_lp(v, xi, p)
@@ -97,7 +104,7 @@ def universal_perturbation(dataset, f, delta=0.2, max_iter_uni=np.inf, xi=10, p=
             # Compute the estimated labels in batches
             for ii in range(0, num_batches):
                 m = (ii * batch_size)
-                M = min((ii+1)*batch_size, num_images)
+                M = min((ii + 1) * batch_size, num_images)
                 if first_run:
                     est_labels_orig[m:M] = torch.argmax(f(dataset[m:M, :, :, :]), dim=1).flatten()
                 est_labels_pert[m:M] = torch.argmax(f(dataset_perturbed[m:M, :, :, :]), dim=1).flatten()

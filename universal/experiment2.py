@@ -3,6 +3,8 @@ import torch
 
 
 def experiment2(perturbation, dataset, f, batch_size, device):
+    # Run second experiment: what are the transformation caused by universal perturbations.
+
     with torch.no_grad():
         perturbed_dataset = dataset + torch.from_numpy(perturbation)
         num_images = len(dataset)

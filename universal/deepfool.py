@@ -5,6 +5,22 @@ import torch
 
 
 def deepfool(image, net, num_classes=10, overshoot=0.02, max_iter=10, device='cpu'):
+    """ Compute the perturbation of a single image.
+
+    :param image: Image to perturbate.
+
+    :param net: feedforward function (input: images, output: values of activation BEFORE softmax).
+
+    :param max_iter: optional other termination criterion (maximum number of iteration, default = 10)
+
+    :param num_classes: num_classes (limits the number of classes to test against, by default = 10)
+
+    :param overshoot: used as a termination criterion to prevent vanishing updates (default = 0.02).
+
+    :param device: Device on which a torch.Tensor will be allocated for heavy computations.
+
+    :return: the universal perturbation.
+    """
     f_image = net(image).detach().cpu().numpy().flatten()
     I = (np.array(f_image)).flatten().argsort()[::-1]
 

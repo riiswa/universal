@@ -25,17 +25,35 @@ if __name__ == '__main__':
         ]
     )
     parser = argparse.ArgumentParser(description='Compute universal perturbation on VGG-11.')
-    parser.add_argument('-s', '--state-dict', type=str, help='File path of a pretrained state dict', default=None)
-    parser.add_argument('--train-data', type=str, help='Directory that contains train data', default='.data/VOC2012')
-    parser.add_argument('-f', '--force-download', action='store_true', default=False)
-    parser.add_argument('-d', '--device', type=str, help='', default='cuda' if torch.cuda.is_available() else 'cpu')
-    parser.add_argument('-p', '--perturbation', type=str, help='', default=None)
-    parser.add_argument('-o', '--output', type=str, help='', default=None)
-    parser.add_argument('-b', '--batch-size', type=int, help='', default=25)
-    parser.add_argument('--image-per-class', type=int, help='', default=25)
-    parser.add_argument('--max-iter', type=int, help='', default=np.inf)
-    parser.add_argument('--exp1', action='store_true', default=False)
-    parser.add_argument('--exp2', action='store_true', default=False)
+    parser.add_argument(
+        '-s', '--state-dict',
+        type=str,
+        help='File path of a pretrained VGG-11 state dict.',
+        default=None
+    )
+    parser.add_argument('--train-data', type=str, help='Directory that contains training/validation data',
+                        default='.data/VOC2012')
+    parser.add_argument('-f',
+                        '--force-download',
+                        help="Force training and test data downloading.",
+                        action='store_true',
+                        default=False
+                        )
+    parser.add_argument('-d', '--device', type=str,
+                        help='Device on which a torch.Tensor will be allocated for heavy computations.',
+                        default='cuda' if torch.cuda.is_available() else 'cpu')
+    parser.add_argument('-p', '--perturbation', type=str, help='Load a precomputed perturbation.', default=None)
+    parser.add_argument('-o', '--output', type=str, help='Path where a new perturbation should be save.', default=None)
+    parser.add_argument('-b', '--batch-size', type=int, help='Size of batch of inference.', default=25)
+    parser.add_argument('--image-per-class', type=int, help='Number of images per class from validation set.',
+                        default=25)
+    parser.add_argument('--max-iter', type=int, help='Max iterations for universal perturbation algorithm.',
+                        default=np.inf)
+    parser.add_argument('--exp1', help='Run first experiment: Compare computed perturbation with others.',
+                        action='store_true', default=False)
+    parser.add_argument('--exp2',
+                        help='Run second experiment: what are the transformation caused by universal perturbations.',
+                        action='store_true', default=False)
     args = parser.parse_args()
     logging.debug(args)
 
@@ -59,18 +77,25 @@ if __name__ == '__main__':
         model.eval()
     else:
         logging.info("State dict not found (--s). "
-                     "Please see the universal-voc-dataset.ipynb notebook to train the algorithm.")
+                     "Please see the model_training.ipynb notebook to train the algorithm.")
         exit()
-    del train_data
 
+    del train_data
     model.to(device)
 
+
     def classifier(img):
+        """ Normalize and classify one or a set of image.
+
+        :param img: Image(s) to classify.
+        :return: classification labels with probabilities.
+        """
         if img.ndim == 3:
             img = img.unsqueeze(0)
         img = normalize(img)
         v = model(img)[0]
         return v
+
 
     gc.collect()
 
@@ -79,6 +104,7 @@ if __name__ == '__main__':
     valid_data.transform = universal_transforms
 
     if args.perturbation:
+        logging.info(f"Perturbation {args.perturbation} found. Load precomputed perturbation.")
         v = np.load(args.perturbation)
     else:
         logging.info(f'Search {args.image_per_class} image per class '
@@ -105,16 +131,18 @@ if __name__ == '__main__':
             torch.stack(imgs).to(device),
             classifier,
             num_classes=len(classes),
-            xi=2000/255,
+            xi=2000 / 255,
             p=2,
             max_iter_uni=args.max_iter,
             device=device
         )
 
     if args.output:
+        logging.info(f"Save perturbation into {args.output}")
         np.save(args.output, v)
 
     if args.exp1:
+        logging.info(f"Start first experiment...")
         dataset = torch.stack([valid_data[i][0] for i in range(len(valid_data))])
         experiment1(
             np.linspace(0., 10000, 20), [v[0],
@@ -140,5 +168,6 @@ if __name__ == '__main__':
         )
 
     if args.exp2:
+        logging.info(f"Start second experiment...")
         dataset = torch.stack([valid_data[i][0] for i in range(len(valid_data))])
         experiment2(v[0], dataset, classifier, args.batch_size, device)

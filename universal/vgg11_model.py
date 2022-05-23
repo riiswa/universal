@@ -1,5 +1,6 @@
 import torch.nn as nn
 
+
 class VGG(nn.Module):
     def __init__(self, features, output_dim, device):
         super().__init__()
@@ -57,5 +58,3 @@ def get_vgg_layers(config, batch_norm):
             in_channels = c
 
     return nn.Sequential(*layers)
-
-

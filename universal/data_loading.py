@@ -8,16 +8,14 @@ from PIL import Image
 
 
 def download_training_data(dir, force=False):
+    """ Download training/validation data into a specified dir.
+
+    :param dir: The dir to install the data.
+    :param force: Force download, and potentially overwrite data.
+    """
     if not os.path.isdir(dir) or force:
         os.system('wget http://host.robots.ox.ac.uk/pascal/VOC/voc2012/VOCtrainval_11-May-2012.tar -O /tmp/VOC.tar')
         os.system('tar -xvf /tmp/VOC.tar')
-        os.system(f'mv VOCdevkit/VOC2012 {dir}')
-
-
-def download_testing_data(dir, force=False):
-    if not os.path.isdir(dir) or force:
-        os.system('gdown --id 1gVllQTZdxA82byaZ_SjeOyjns0qnugwR -O /tmp/VOC_test.tar')
-        os.system('tar -xvf /tmp/VOC_test.tar')
         os.system(f'mv VOCdevkit/VOC2012 {dir}')
 
 
@@ -53,6 +51,13 @@ universal_transforms = transforms.Compose([
 
 
 def load_csv(dir, c, suffix):
+    """ Load VOC2012 data csv into pandas.DataFrame.
+
+    :param dir: Dir where 2012 data are.
+    :param c: Class name.
+    :param suffix: Suffix after {classname}_.
+    :return: pandas.DataFrame that contain csv data.
+    """
     return pd.read_csv(f"{dir}/ImageSets/Main/{c}_{suffix}.txt", delimiter=r"\s+", header=None, names=('id', c))
 
 
@@ -61,6 +66,11 @@ classes = ['bicycle', 'horse', 'cat', 'dog', 'pottedplant', 'aeroplane', 'sofa',
 
 
 def get_trainval_dataset(dir):
+    """ Format raw VOC2012 data.
+
+    :param dir: Dir where 2012 data are.
+    :return: Formatted VOC2012 data.
+    """
     df = reduce(lambda df1, df2: pd.merge(df1, df2, on='id'), [load_csv(dir, c, 'trainval') for c in classes])
     df['label'] = df.apply(lambda row: row[classes].tolist().index(1), axis=1)
     with open(f"{dir}/ImageSets/Main/train.txt", 'r') as f:
@@ -71,14 +81,9 @@ def get_trainval_dataset(dir):
     return train_data_df, valid_data_df
 
 
-def get_test_dataset(dir):
-    df_test = reduce(lambda df1, df2: pd.merge(df1, df2, on='id'), [load_csv(dir, c, 'test') for c in classes])
-    df_test['label'] = np.zeros(len(df_test), dtype=int)
-
-    return df_test[['id', 'label']]
-
-
 class VOCDataset(Dataset):
+    """ Data loader of VOC2012."""
+
     def __init__(self, data, dir, transform=None):
         self.data = data
         self.dir = dir
@@ -87,9 +92,15 @@ class VOCDataset(Dataset):
         self.image_paths = data['id'].tolist()
 
     def __len__(self):
+        """ Number of images in the dataset."""
         return len(self.image_paths)
 
     def __getitem__(self, idx):
+        """ Get one image in te dataset.
+
+        :param idx: Index of the image.
+        :return: The image and corresponding label.
+        """
         image_filepath = f"{self.dir}/JPEGImages/{self.data.iloc[idx].values[0]}.jpg"
         image = Image.open(image_filepath)
 
